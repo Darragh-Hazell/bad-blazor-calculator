@@ -1,0 +1,212 @@
+﻿@page "/calculator"
+@rendermode InteractiveServer
+
+<PageTitle>Calculator</PageTitle>
+
+<h3>Calculator</h3>
+
+<div class="grid gap-6">
+    <div class="row row-gap-3">
+        <div class="m-1 mx-3 col-4 border border-3 text-end">
+            @calculatorCurrent
+        </div>
+    </div>
+    <div class="row row-gap-3">
+        <button class="m-1 col-1 btn btn-primary" @onclick="Clear">
+            C
+        </button>
+        <button class="m-1 col-1 btn">
+            
+        </button>
+        <button class="m-1 col-1 btn">
+            
+        </button>
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => NewOperation(new Division()))">
+            /
+        </button>
+    </div>
+    <div class="row row-gap-3">
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => Number(7))">
+            7
+        </button>
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => Number(8))">
+            8
+        </button>
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => Number(9))">
+            9
+        </button>
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => NewOperation(new Multiplication()))">
+            X
+        </button>
+    </div>
+    <div class="row row-gap-3">
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => Number(4))">
+            4
+        </button>
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => Number(5))">
+            5
+        </button>
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => Number(6))">
+            6
+        </button>
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => NewOperation(new Subtraction()))">
+            -
+        </button>
+    </div>
+    <div class="row row-gap-3">
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => Number(1))">
+            1
+        </button>
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => Number(2))">
+            2
+        </button>
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => Number(3))">
+            3
+        </button>
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => NewOperation(new Addition()))">
+            +
+        </button>
+    </div>
+    <div class="row row-gap-3">
+        <button class="m-1 col-1 btn">
+            
+        </button>
+        <button class="m-1 col-1 btn btn-primary" @onclick="@(e => Number(0))">
+            0
+        </button>
+        <button class="m-1 col-1 btn">
+            
+        </button>
+        <button class="m-1 col-1 btn btn-primary" @onclick="CalculatorResult">
+            =
+        </button>
+    </div>
+</div>
+
+@code {
+    private String calculatorCurrent = "0";
+    private IOperation currentOperation = new Result();
+
+    private void Clear()
+    {
+        calculatorCurrent = "0";
+        currentOperation = new Result();
+    }
+
+    private void Number(int n)
+    {
+        if (calculatorCurrent == "0")
+        {
+            calculatorCurrent = Convert.ToString(n);
+            return;
+        }
+        calculatorCurrent += Convert.ToString(n);
+    }
+
+    public void NewOperation(IOperation operation)
+    {
+        if (currentOperation.EssentiallyNull()) {
+            currentOperation = operation;
+            currentOperation.AddToOperation(Convert.ToDouble(calculatorCurrent));
+            calculatorCurrent = "";
+        } else {
+            currentOperation.AddToOperation(Convert.ToDouble(calculatorCurrent));
+            double result = currentOperation.Execute();
+
+            currentOperation = operation;
+            currentOperation.AddToOperation(result);
+            calculatorCurrent = "";
+        }
+    }
+
+    public void CalculatorResult()
+    {
+        currentOperation.AddToOperation(Convert.ToDouble(calculatorCurrent));
+        double result = currentOperation.Execute();
+        Console.WriteLine(result);
+        calculatorCurrent = Convert.ToString(currentOperation.Execute());
+        currentOperation = new Result();
+    }
+
+    public interface IOperation
+    {
+        void AddToOperation(double number);
+        double Execute();
+        bool EssentiallyNull();
+    }
+
+    public abstract class SimpleOperation : IOperation {
+
+        protected List<double> numbers;
+
+        public SimpleOperation()
+        {
+            numbers = new List<double>();
+        }
+
+        public void AddToOperation(double number)
+        {
+            numbers.Add(number);
+        }
+
+        public abstract double Execute();
+
+        public virtual bool EssentiallyNull()
+        {
+            return false;
+        }
+
+    }
+
+    public class Result : SimpleOperation
+    {
+        public Result()
+        {
+            numbers.Add(0);
+        }
+
+        public override double Execute()
+        {
+            return numbers[0];
+        }
+
+        public override bool EssentiallyNull()
+        {
+            return true;
+        }
+
+    }
+
+    public class Addition : SimpleOperation
+    {
+        public override double Execute()
+        {
+            return numbers[0] + numbers[1];
+        }
+    }
+
+    public class Subtraction : SimpleOperation
+    {
+        public override double Execute()
+        {
+            return numbers[0] - numbers[1];
+        }
+    }
+
+    public class Multiplication : SimpleOperation
+    {
+        public override double Execute()
+        {
+            return numbers[0] * numbers[1];
+        }
+    }
+
+    public class Division : SimpleOperation
+    {
+        public override double Execute()
+        {
+            return numbers[0] / numbers[1];
+        }
+    }
+
+}
